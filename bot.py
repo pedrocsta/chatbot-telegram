@@ -1,43 +1,72 @@
-from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
+import telebot
 
-import responses
 from constants import API_KEY
 
+bot = telebot.TeleBot(API_KEY, parse_mode=None)
 
-def start_command(update, context):
-    update.message.reply_text(
-        f"""Olá {update.message.from_user['first_name']} {update.message.from_user['last_name']}. Seja bem vindo!
-Digite "/help" caso precise de ajuda."""
+
+@bot.message_handler(commands=['start'])
+def start(message) -> None:
+    bot.send_message(
+        message.chat.id,
+        f"Olá {message.chat.first_name} {message.chat.last_name}, bem vindo ao atendimento do NUARTE. 🤩"
+        "Digite /help caso precise de ajuda."
     )
 
 
-def help_command(update, context):
-    update.message.reply_text('"Oi" ou "Olá" -> Retorna uma saudação.')
+@bot.message_handler(commands=['help'])
+def help(message) -> None:
+    bot.send_message(
+        message.chat.id,
+        "Posso ajudá-lo a reservar salas do NUARTE.\n"
+        "\n"
+        "Você pode me controlar enviando estes comandos:\n"
+        "\n"
+        "/reservar - reserva uma sala\n"
+        "/cancelar - cancela uma reserva"
+    )
 
 
-def handle_message(update, context):
-    txt = str(update.message.text).lower()
-    response = responses.sample_response(txt)
-
-    update.message.reply_text(response)
-
-
-def error(update, context):
-    print(f"Update: {update} caused error: {context.error}")
-
-
-def main():
-    updater = Updater(API_KEY, use_context=True)
-    application = updater.dispatcher
-
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(MessageHandler(Filters.text, handle_message))
-    application.add_error_handler(error)
-
-    updater.start_polling()
-    updater.idle()
+@bot.message_handler(commands=['reservar'])
+def reserve(message) -> None:
+    bot.send_message(
+        message.chat.id,
+        "Qual das salas abaixo deseja reservar?\n"
+        "\n"
+        "/sala - reserva a sala normal\n"
+        "/camarim - reserva o camarim"
+    )
 
 
-if __name__ == '__main__':
-    main()
+@bot.message_handler(commands=['sala', 'camarim'])
+def type_room(message) -> None:
+    # text = f'{message.text}'.replace('/', '')
+    bot.send_message(
+        message.chat.id,
+        "Em qual turno vai querer reservar?\n"
+        "\n"
+        "/manha - vê os horários da manhã"
+        "/tarde - vê os horários da tarde"
+        "/noite - vê os horários da noite"
+    )
+
+
+@bot.message_handler(commands=['manha', 'tarde', 'noite'])
+def type_room(message) -> None:
+    # current_date = message.date - 86400
+
+    bot.send_message(
+        message.chat.id,
+        "Qual dos horários abaixo deseja realizar a reserva?\n"
+        "\n"
+        "/primeiros - Reserva o primeiro e segundo horário"
+        "/intermediarios - Reserva o terceiro e quarto horário"
+        "/ultimos - Reserva o quinto e sexto horário"
+    )
+
+
+def schedules(room) -> str:
+    pass
+
+
+bot.infinity_polling()
