@@ -1,6 +1,8 @@
 import telebot
 
 from constants import API_KEY
+from queries import cancel_reservation, check_availability, make_reservation
+from responses import mag_day_shift, msg_help, msg_reserve, msg_schedule
 
 bot = telebot.TeleBot(API_KEY, parse_mode=None)
 
@@ -18,12 +20,7 @@ def start(message) -> None:
 def help(message) -> None:
     bot.send_message(
         message.chat.id,
-        "Posso ajudá-lo a reservar salas do NUARTE.\n"
-        "\n"
-        "Você pode me controlar enviando estes comandos:\n"
-        "\n"
-        "/reservar - reserva uma sala\n"
-        "/cancelar - cancela uma reserva"
+        msg_help
     )
 
 
@@ -31,42 +28,58 @@ def help(message) -> None:
 def reserve(message) -> None:
     bot.send_message(
         message.chat.id,
-        "Qual das salas abaixo deseja reservar?\n"
-        "\n"
-        "/sala - reserva a sala normal\n"
-        "/camarim - reserva o camarim"
+        msg_reserve
     )
 
 
 @bot.message_handler(commands=['sala', 'camarim'])
-def type_room(message) -> None:
-    # text = f'{message.text}'.replace('/', '')
+def day_shift(message) -> None:
+    global room
+    txt = f'{message.text}'.replace('/', '')
+    room = 1 if txt == 'sala' else 2
+
     bot.send_message(
         message.chat.id,
-        "Em qual turno vai querer reservar?\n"
-        "\n"
-        "/manha - vê os horários da manhã"
-        "/tarde - vê os horários da tarde"
-        "/noite - vê os horários da noite"
+        mag_day_shift
     )
 
 
 @bot.message_handler(commands=['manha', 'tarde', 'noite'])
-def type_room(message) -> None:
+def schedule(message) -> None:
+    global shift
+    txt = f'{message.text}'.replace('/', '')
+
+    if txt == 'manha':
+        shift = 1
+    elif txt == 'tarde':
+        shift = 2
+    else:
+        shift = 3
+
     # current_date = message.date - 86400
 
     bot.send_message(
         message.chat.id,
-        "Qual dos horários abaixo deseja realizar a reserva?\n"
-        "\n"
-        "/primeiros - Reserva o primeiro e segundo horário"
-        "/intermediarios - Reserva o terceiro e quarto horário"
-        "/ultimos - Reserva o quinto e sexto horário"
+        msg_schedule
     )
 
 
-def schedules(room) -> str:
-    pass
+@bot.message_handler(commands=['primeiro', 'segundo', 'terceiro', 'quarto', 'quinto', 'sexto'])
+def time_booked(message) -> None:
+    global time
+    time = f'{message.text}'.replace('/', '')
+
+    if check_availability(time, shift, room):
+        make_reservation(time, shift, room)
+        bot.send_message(
+            message.chat.id,
+            'Horário reservado com sucesso!'
+        )
+    else:
+        bot.send_message(
+            message.chat.id,
+            'Desculpe, mas o horário já foi reservado!'
+        )
 
 
 bot.infinity_polling()

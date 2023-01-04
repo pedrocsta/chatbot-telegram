@@ -3,3 +3,4 @@ __pycache__/
 .mypy_cache/
 constants.py
 message.json
+script.sql
